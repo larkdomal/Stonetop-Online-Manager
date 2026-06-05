@@ -299,8 +299,45 @@ function renderDice(){
 
 function renderAll(){const a=document.querySelector(".tab.active")?.dataset.tab;if(a==="characters")renderCharacters();else if(a==="steading")renderSteading();else if(a==="fronts")renderFronts();else if(a==="npcs")renderNPCs();else if(a==="dice")renderDice();}
 
-function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="stonetop-table-"+new Date().toISOString().slice(0,10)+".json";a.click();}
-function importData(){const inp=document.getElementById("fileInput");inp.value="";inp.onchange=()=>{const f=inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{state=migrate(JSON.parse(rd.result));save();renderAll();alert("Imported.");}catch(e){alert("Could not read that file.");}};rd.readAsText(f);};inp.click();}
+async function exportData(){
+  try{
+    const res = await fetch(`/api/backups/${DEFAULT_ROOM_ID}/manual`,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(state)});
+    if(!res.ok) throw new Error(res.status);
+    setSync("live","manual backup saved");
+    alert("Manual backup saved on the server.");
+  }catch(e){
+    setSync("err","manual backup failed");
+    alert("Manual backup failed. Error: "+e.message);
+  }
+}
+async function importData(){
+  try{
+    const res=await fetch(`/api/backups/${DEFAULT_ROOM_ID}`,{headers:{"Accept":"application/json"}});
+    if(!res.ok)throw new Error(res.status);
+    const data=await res.json();
+    const backups=(data.backups||[]);
+    if(!backups.length){alert("No server backups found yet. Click Export once to create a manual backup, or make a few changes to create automatic backups.");return;}
+    const list=backups.slice(0,40).map((b,i)=>`${i+1}. ${b.type.toUpperCase()} · ${new Date(b.createdAt).toLocaleString()} · ${b.name}`).join("\n");
+    const pick=prompt("Choose a backup to restore by number:\n\n"+list);
+    if(!pick)return;
+    const n=parseInt(pick,10);
+    if(!n||n<1||n>Math.min(backups.length,40)){alert("Invalid backup number.");return;}
+    const b=backups[n-1];
+    if(!confirm("Restore this backup?\n\n"+b.name+"\n\nCurrent state will be saved as an automatic backup first."))return;
+    const rr=await fetch(`/api/backups/${DEFAULT_ROOM_ID}/restore/${encodeURIComponent(b.name)}`,{method:"POST",headers:{"Accept":"application/json"}});
+    if(!rr.ok)throw new Error(rr.status);
+    const restored=await rr.json();
+    state=migrate(restored.data);
+    state.meta.roomId=DEFAULT_ROOM_ID;
+    dirty=false;lastPulled=state.meta.updated||Date.now();
+    localStorage.setItem("stonetop",JSON.stringify(state));
+    renderAll();
+    setSync("live","restored backup");
+    alert("Backup restored. Everyone should see the restored table within a few seconds.");
+  }catch(e){
+    alert("Could not load server backups. Error: "+e.message);
+  }
+}
 
 const SYNC_BASE="/api/jsonBlob";
 const DEFAULT_ROOM_ID="stonetop-main";
