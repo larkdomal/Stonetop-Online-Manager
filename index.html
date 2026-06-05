@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stonetop Table</title>
+<style>
+:root{--bg:#1d1a17;--panel:#262019;--panel2:#2f2820;--ink:#ece3d3;--muted:#a99f8c;--accent:#c9a24b;--accent2:#7fa6b0;--line:#473d30;--danger:#c45b4a;--good:#7faa6b;--radius:10px}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 "Iowan Old Style","Palatino Linotype",Georgia,serif}
+header{display:flex;align-items:center;gap:14px;padding:12px 18px;background:linear-gradient(180deg,#2c241b,#211b15);border-bottom:2px solid var(--line);position:sticky;top:0;z-index:20;flex-wrap:wrap}
+header h1{font-size:20px;margin:0;letter-spacing:.5px;color:var(--accent)}
+header .sub{color:var(--muted);font-size:12px}
+.tabs{display:flex;gap:4px;padding:8px 12px 0;background:#211b15;border-bottom:1px solid var(--line);position:sticky;top:54px;z-index:19;flex-wrap:wrap}
+.tab{padding:8px 14px;border:1px solid var(--line);border-bottom:none;background:var(--panel);color:var(--muted);cursor:pointer;border-radius:8px 8px 0 0;font-size:14px}
+.tab.active{background:var(--panel2);color:var(--accent);font-weight:600}
+main{padding:18px;max-width:1200px;margin:0 auto}
+.view{display:none}.view.active{display:block}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;margin:0 0 14px}
+.card h3{margin:0 0 10px;color:var(--accent);font-size:16px;border-bottom:1px solid var(--line);padding-bottom:6px;display:flex;align-items:center;gap:8px}
+label{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--muted);margin:8px 0 3px}
+input,select,textarea{width:100%;background:#1a1611;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:7px 9px;font:inherit;font-size:14px}
+textarea{resize:vertical;min-height:60px;line-height:1.4}
+input:focus,textarea:focus,select:focus{outline:1px solid var(--accent);border-color:var(--accent)}
+.row{display:flex;gap:12px;flex-wrap:wrap}.row>div{flex:1;min-width:120px}
+.stats{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.stat{background:#1a1611;border:1px solid var(--line);border-radius:8px;padding:8px;text-align:center}
+.stat label{margin:0 0 4px}.stat input{text-align:center;font-size:20px;font-weight:700;padding:4px}
+.btn{background:var(--panel2);border:1px solid var(--line);color:var(--ink);padding:7px 12px;border-radius:7px;cursor:pointer;font:inherit;font-size:13px}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn.primary{background:var(--accent);color:#231c10;border-color:var(--accent);font-weight:600}
+.btn.danger{color:var(--danger)}.btn.danger:hover{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn.sm{padding:4px 8px;font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}.stats{grid-template-columns:repeat(3,1fr)}}
+.pill{display:inline-block;background:#1a1611;border:1px solid var(--line);border-radius:20px;padding:2px 10px;font-size:12px;color:var(--muted)}
+.clock{display:inline-flex;flex-wrap:wrap;gap:3px;margin:6px 0}
+.seg{width:22px;height:22px;border-radius:50%;border:2px solid var(--accent);cursor:pointer;background:transparent}
+.seg.on{background:var(--danger);border-color:var(--danger)}
+.num{width:64px!important;text-align:center}
+.move{border-left:3px solid var(--accent2);padding:4px 0 4px 12px;margin:10px 0}
+.move b{color:var(--ink)}.move .cmd{color:var(--accent);font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px}
+.muted{color:var(--muted)}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.syncdot{width:9px;height:9px;border-radius:50%;background:#555;display:inline-block}
+.syncdot.live{background:var(--good);box-shadow:0 0 6px var(--good)}.syncdot.err{background:var(--danger)}
+.codebox{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;background:#15110c;border:1px solid var(--line);border-radius:6px;padding:10px;white-space:pre-wrap}
+.entity{border:1px solid var(--line);border-radius:8px;padding:12px;margin-bottom:12px;background:var(--panel2)}
+.entity .head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.hint{font-size:12px;color:var(--muted);margin-top:4px}
+.rollbay{display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;margin:0 0 16px}
+.sidecol{display:flex;flex-direction:column;gap:7px;width:172px}
+.sidecol label{margin:2px 0 0}
+.advbtn{width:100%;padding:13px 10px;border:2px solid var(--line);border-radius:10px;background:#1a1611;color:var(--muted);font-weight:700;font-size:15px;cursor:pointer;text-align:center;transition:.15s}
+.advbtn .state{display:block;font-size:11px;letter-spacing:1.5px;margin-top:5px;color:var(--danger)}
+.advbtn.on{background:var(--accent);border-color:var(--accent);color:#231c10;box-shadow:0 4px 14px #c9a24b55}
+.advbtn.on .state{color:#14550f}
+.bigresult{flex:1;min-width:280px;max-width:460px;text-align:center;background:radial-gradient(circle at 50% -10%,#3c3120,#241d16 70%);border:1px solid var(--accent);border-radius:16px;padding:20px 22px;box-shadow:0 10px 30px #0009,inset 0 0 22px #00000040}
+.bigresult .ctx{font-size:12px;color:var(--accent2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:12px;min-height:15px}
+.dice{display:flex;align-items:center;justify-content:center;gap:12px;margin:4px 0 2px;flex-wrap:wrap}
+.die{width:58px;height:58px;background:linear-gradient(150deg,#f6edd6,#e3d2ac);border-radius:12px;display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(3,1fr);padding:8px;box-shadow:inset 0 0 0 1px #0002,0 3px 6px #0007}
+.die span{display:flex;align-items:center;justify-content:center}
+.die i{width:9px;height:9px;border-radius:50%;background:#241c10;display:block}
+.die.roll{animation:tumble .28s linear infinite}
+.die.dropped{opacity:.3;filter:grayscale(1)}
+@keyframes tumble{from{transform:rotate(-8deg) scale(.96)}50%{transform:rotate(8deg) scale(1.04)}to{transform:rotate(-8deg) scale(.96)}}
+.total{font-size:58px;font-weight:800;line-height:1;margin:10px 0 2px;color:var(--ink);min-height:58px}
+.total.pop{animation:pop .35s cubic-bezier(.2,1.4,.4,1)}
+@keyframes pop{0%{transform:scale(.5);opacity:0}100%{transform:scale(1);opacity:1}}
+.tier{font-size:17px;font-weight:800;letter-spacing:1px;min-height:20px}
+.bd{font-size:13px;color:var(--muted);margin-top:6px;min-height:16px}
+.tier-hit{color:var(--good)}.tier-mix{color:var(--accent)}.tier-miss{color:var(--danger)}
+</style>
+</head>
+<body>
+<header>
+  <h1>⚔ Stonetop Table</h1>
+  <span class="sub">shared campaign tracker</span>
+  <div style="flex:1"></div>
+  <div class="toolbar">
+    <span class="syncdot" id="syncdot" title="sync status"></span>
+    <span class="muted" id="syncmsg" style="font-size:12px">local only</span>
+    <button class="btn sm" onclick="openSync()">Shared Table…</button>
+    <button class="btn sm" onclick="exportData()">Export</button>
+    <button class="btn sm" onclick="importData()">Import</button>
+    <input type="file" id="fileInput" accept="application/json" style="display:none">
+  </div>
+</header>
+<nav class="tabs" id="tabs"></nav>
+<main>
+  <section class="view" id="view-characters"></section>
+  <section class="view" id="view-steading"></section>
+  <section class="view" id="view-fronts"></section>
+  <section class="view" id="view-npcs"></section>
+  <section class="view" id="view-dice"></section>
+</main>
+<script>
+const PLAYBOOKS=["The Blessed","The Fox","The Heavy","The Judge","The Lightbearer","The Marshal","The Ranger","The Seeker","The Would-Be Hero"];
+const STATS=["STR","DEX","CON","INT","WIS","CHA"];
+const TABS=[["characters","🎭 Characters"],["steading","🏘 Steading"],["fronts","🗡 Fronts & Clocks"],["npcs","👥 NPCs"],["dice","🎲 Dice & Moves"]];
+const uid=()=>Math.random().toString(36).slice(2,9);
+const clone=o=>(typeof structuredClone==="function")?structuredClone(o):JSON.parse(JSON.stringify(o));
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));
+function blankChar(){return{id:uid(),name:"New Hero",playbook:"The Fox",STR:0,DEX:0,CON:0,INT:0,WIS:0,CHA:0,hp:0,maxhp:8,armor:0,xp:0,level:1,moves:"",gear:"",bonds:"",notes:""};}
+const DEFAULT={campaign:"Stonetop",characters:[],steading:{fortunes:0,surplus:0,prosperity:3,population:300,defenses:0,resources:"Hunting & trapping (meat, hide, horn)\nFarming (grain, vegetables)\nWhitefang wool",fortifications:"The Old Wall (crumbling)\nVillage militia",debilities:"",trades:"Gordin's Delve (metal, tools)\nMarshedge (textiles, herbs, glass)",notes:""},fronts:[],clocks:[],npcs:[],meta:{updated:Date.now(),roomId:null}};
+let state=load(),dirty=false;
+function load(){try{const s=JSON.parse(localStorage.getItem("stonetop"));if(s)return migrate(s);}catch(e){}return clone(DEFAULT);}
+function migrate(s){const d=clone(DEFAULT);return{...d,...s,steading:{...d.steading,...(s.steading||{})},meta:{...d.meta,...(s.meta||{})}};}
+function save(markDirty=true){state.meta.updated=Date.now();localStorage.setItem("stonetop",JSON.stringify(state));if(markDirty)dirty=true;}
+function el(html){const t=document.createElement("template");t.innerHTML=html.trim();return t.content.firstChild;}
+function bind(node,obj,key){node.value=obj[key]??"";node.addEventListener("input",()=>{obj[key]=node.type==="number"?(parseInt(node.value)||0):node.value;save();});}
+
+function buildTabs(){const nav=document.getElementById("tabs");TABS.forEach(([id,label])=>{const t=el(`<div class="tab" data-tab="${id}">${label}</div>`);t.onclick=()=>switchTab(id);nav.appendChild(t);});switchTab("characters");}
+function switchTab(id){document.querySelectorAll(".tab").forEach(t=>t.classList.toggle("active",t.dataset.tab===id));document.querySelectorAll(".view").forEach(v=>v.classList.toggle("active",v.id==="view-"+id));renderAll();}
+
+function renderCharacters(){
+  const v=document.getElementById("view-characters");v.innerHTML="";
+  const bar=el(`<div class="card"><div class="toolbar"><b style="color:var(--accent)">Party</b><div style="flex:1"></div></div></div>`);
+  const add=el(`<button class="btn primary sm">+ Add hero</button>`);add.onclick=()=>{state.characters.push(blankChar());save();renderCharacters();};
+  bar.querySelector(".toolbar").appendChild(add);v.appendChild(bar);
+  if(!state.characters.length){v.appendChild(el(`<p class="muted">No heroes yet. Each player adds their character here — pick a playbook, set the stat modifiers from your playbook sheet, and track HP, XP, moves and gear.</p>`));return;}
+  state.characters.forEach(c=>{
+    const card=el(`<div class="card"></div>`);
+    const head=el(`<div class="row" style="align-items:flex-end"></div>`);
+    const nw=el(`<div style="flex:2"><label>Name</label></div>`);const nm=el(`<input>`);bind(nm,c,"name");nw.appendChild(nm);
+    const pw=el(`<div><label>Playbook</label></div>`);const pb=el(`<select>${PLAYBOOKS.map(p=>`<option ${p===c.playbook?"selected":""}>${p}</option>`).join("")}</select>`);pb.onchange=()=>{c.playbook=pb.value;save();};pw.appendChild(pb);
+    const lw=el(`<div style="max-width:90px"><label>Level</label></div>`);const lv=el(`<input type="number" class="num">`);bind(lv,c,"level");lw.appendChild(lv);
+    const dw=el(`<div style="flex:0"></div>`);const del=el(`<button class="btn danger sm">Remove</button>`);del.onclick=()=>{if(confirm("Remove "+c.name+"?")){state.characters=state.characters.filter(x=>x.id!==c.id);save();renderCharacters();}};dw.appendChild(del);
+    head.append(nw,pw,lw,dw);card.appendChild(head);
+    const stats=el(`<div class="stats" style="margin-top:12px"></div>`);
+    STATS.forEach(s=>{const b=el(`<div class="stat"><label>${s}</label></div>`);const i=el(`<input type="number">`);bind(i,c,s);b.appendChild(i);stats.appendChild(b);});
+    card.appendChild(stats);
+    const tr=el(`<div class="row" style="margin-top:12px"></div>`);
+    const mk=(lab,key)=>{const w=el(`<div><label>${lab}</label></div>`);const i=el(`<input type="number" class="num">`);bind(i,c,key);w.appendChild(i);return w;};
+    tr.append(mk("HP","hp"),mk("Max HP","maxhp"),mk("Armor","armor"),mk("XP (level up at 6+2×level)","xp"));card.appendChild(tr);
+    const grid=el(`<div class="grid2" style="margin-top:12px"></div>`);
+    const ta=(lab,key,ph)=>{const w=el(`<div><label>${lab}</label></div>`);const t=el(`<textarea placeholder="${ph}"></textarea>`);bind(t,c,key);w.appendChild(t);return w;};
+    grid.append(ta("Moves","moves","List your playbook moves & abilities"),ta("Gear & weapons","gear","Weapons (damage & tags), armor, items"),ta("Bonds / Relationships","bonds","Ties to other PCs & NPCs"),ta("Notes & statuses","notes","Conditions, debilities, reminders"));
+    card.appendChild(grid);v.appendChild(card);
+  });
+}
+
+function renderSteading(){
+  const v=document.getElementById("view-steading");v.innerHTML="";const s=state.steading;
+  const card=el(`<div class="card"><h3>🏘 Stonetop — the Steading</h3><p class="hint">Review at the start of each session. Keep in sync with the GM playbook. Fortunes drift toward +0 each season.</p></div>`);
+  const top=el(`<div class="stats" style="grid-template-columns:repeat(4,1fr)"></div>`);
+  [["Fortunes","fortunes"],["Surplus","surplus"],["Prosperity","prosperity"],["Defenses","defenses"]].forEach(([lab,key])=>{const b=el(`<div class="stat"><label>${lab}</label></div>`);const i=el(`<input type="number">`);bind(i,s,key);b.appendChild(i);top.appendChild(b);});
+  card.appendChild(top);
+  const pop=el(`<div class="row" style="margin-top:12px"><div style="max-width:160px"><label>Population</label></div></div>`);const pi=el(`<input type="number" class="num" style="width:120px">`);bind(pi,s,"population");pop.firstChild.appendChild(pi);card.appendChild(pop);
+  const grid=el(`<div class="grid2" style="margin-top:12px"></div>`);
+  const ta=(lab,key)=>{const w=el(`<div><label>${lab}</label></div>`);const t=el(`<textarea style="min-height:90px"></textarea>`);bind(t,s,key);w.appendChild(t);return w;};
+  grid.append(ta("Resources","resources"),ta("Fortifications & defenses","fortifications"),ta("Trade partners","trades"),ta("Debilities","debilities"));card.appendChild(grid);
+  const nw=el(`<div style="margin-top:12px"><label>Notes (holdings, projects, threats to the village)</label></div>`);const nt=el(`<textarea style="min-height:80px"></textarea>`);bind(nt,s,"notes");nw.appendChild(nt);card.appendChild(nw);
+  v.appendChild(card);
+}
+
+function renderFronts(){
+  const v=document.getElementById("view-fronts");v.innerHTML="";
+  const cl=el(`<div class="card"><h3>⏱ Clocks <span class="hint" style="font-weight:400">— countdowns & grim portents</span></h3></div>`);
+  const ac=el(`<button class="btn primary sm">+ Add clock</button>`);ac.onclick=()=>{state.clocks.push({id:uid(),name:"New clock",segments:6,filled:0,notes:""});save();renderFronts();};
+  cl.querySelector("h3").append(el('<div style="flex:1"></div>'),ac);
+  state.clocks.forEach(ck=>{
+    const e=el(`<div class="entity"></div>`);const hd=el(`<div class="head"></div>`);
+    const nm=el(`<input style="flex:1;font-weight:600">`);bind(nm,ck,"name");
+    const ss=el(`<select style="width:auto"><option>4</option><option>6</option><option>8</option><option>10</option><option>12</option></select>`);ss.value=ck.segments;ss.onchange=()=>{ck.segments=parseInt(ss.value);if(ck.filled>ck.segments)ck.filled=ck.segments;save();renderFronts();};
+    const del=el(`<button class="btn danger sm">✕</button>`);del.onclick=()=>{state.clocks=state.clocks.filter(x=>x.id!==ck.id);save();renderFronts();};
+    hd.append(nm,ss,del);e.appendChild(hd);
+    const clock=el(`<div class="clock"></div>`);for(let i=0;i<ck.segments;i++){const seg=el(`<div class="seg ${i<ck.filled?"on":""}"></div>`);seg.onclick=()=>{ck.filled=(i+1===ck.filled)?i:i+1;save();renderFronts();};clock.appendChild(seg);}
+    e.appendChild(clock);const nt=el(`<textarea placeholder="What happens when it fills?" style="min-height:44px"></textarea>`);bind(nt,ck,"notes");e.appendChild(nt);cl.appendChild(e);
+  });
+  v.appendChild(cl);
+  const fr=el(`<div class="card"><h3>🗡 Fronts & Threats</h3></div>`);
+  const af=el(`<button class="btn primary sm">+ Add front</button>`);af.onclick=()=>{state.fronts.push({id:uid(),name:"New front",type:"Danger",description:"",grimPortents:"",impendingDoom:"",stakes:"",cast:""});save();renderFronts();};
+  fr.querySelector("h3").append(el('<div style="flex:1"></div>'),af);
+  state.fronts.forEach(f=>{
+    const e=el(`<div class="entity"></div>`);const hd=el(`<div class="head"></div>`);
+    const nm=el(`<input style="flex:2;font-weight:600">`);bind(nm,f,"name");
+    const typ=el(`<select style="width:auto">${["Danger","Campaign Front","Adventure Front","Steading Threat"].map(t=>`<option ${t===f.type?"selected":""}>${t}</option>`).join("")}</select>`);typ.onchange=()=>{f.type=typ.value;save();};
+    const del=el(`<button class="btn danger sm">✕</button>`);del.onclick=()=>{state.fronts=state.fronts.filter(x=>x.id!==f.id);save();renderFronts();};
+    hd.append(nm,typ,del);e.appendChild(hd);
+    const ta=(lab,key,ph)=>{const w=el(`<div><label>${lab}</label></div>`);const t=el(`<textarea placeholder="${ph}" style="min-height:50px"></textarea>`);bind(t,f,key);w.appendChild(t);return w;};
+    e.appendChild(ta("Description / what it wants","description",""));
+    const g=el(`<div class="grid2"></div>`);g.append(ta("Grim portents","grimPortents","Steps toward doom"),ta("Impending doom","impendingDoom","If unchecked…"),ta("Stakes questions","stakes","What you want to find out"),ta("Cast","cast","NPCs tied to this front"));
+    e.appendChild(g);fr.appendChild(e);
+  });
+  v.appendChild(fr);
+}
+
+function renderNPCs(){
+  const v=document.getElementById("view-npcs");v.innerHTML="";
+  const card=el(`<div class="card"><h3>👥 Cast of Stonetop</h3></div>`);
+  const add=el(`<button class="btn primary sm">+ Add NPC</button>`);add.onclick=()=>{state.npcs.push({id:uid(),name:"New NPC",role:"",location:"",disposition:"Neutral",notes:""});save();renderNPCs();};
+  card.querySelector("h3").append(el('<div style="flex:1"></div>'),add);v.appendChild(card);
+  if(!state.npcs.length)v.appendChild(el(`<p class="muted">Track villagers, allies, and enemies so the cast doesn't have to live in your head.</p>`));
+  state.npcs.forEach(n=>{
+    const e=el(`<div class="entity"></div>`);const hd=el(`<div class="head"></div>`);
+    const nm=el(`<input style="flex:2;font-weight:600">`);bind(nm,n,"name");
+    const disp=el(`<select style="width:auto">${["Ally","Friendly","Neutral","Wary","Hostile"].map(d=>`<option ${d===n.disposition?"selected":""}>${d}</option>`).join("")}</select>`);disp.onchange=()=>{n.disposition=disp.value;save();};
+    const del=el(`<button class="btn danger sm">✕</button>`);del.onclick=()=>{state.npcs=state.npcs.filter(x=>x.id!==n.id);save();renderNPCs();};
+    hd.append(nm,disp,del);e.appendChild(hd);
+    const r=el(`<div class="row"></div>`);const mk=(lab,key,ph)=>{const w=el(`<div><label>${lab}</label></div>`);const i=el(`<input placeholder="${ph}">`);bind(i,n,key);w.appendChild(i);return w;};
+    r.append(mk("Role","role","baker, elder, bandit…"),mk("Location","location","where to find them"));e.appendChild(r);
+    const nw=el(`<div><label>Notes</label></div>`);const t=el(`<textarea style="min-height:50px"></textarea>`);bind(t,n,"notes");nw.appendChild(t);e.appendChild(nw);v.appendChild(e);
+  });
+}
+
+const BASIC_MOVES=[
+  ["Clash","STR","Fight in melee. 10+: deal damage + pick 1. 7-9: deal damage but suffer the enemy's attack."],
+  ["Let Fly","DEX","Ranged attack. Easy shot: just deal damage. Tricky/pressured: roll +DEX, 7-9 pick a complication."],
+  ["Defy Danger","varies","Do something chancy. Roll the stat that fits (STR/DEX/CON/INT/WIS/CHA)."],
+  ["Defend","CON","Defensive stance. 10+: hold 3 Readiness (4 w/ shield). 7-9: hold 1 (2 w/ shield)."],
+  ["Aid","—","Help someone before they roll; you share the risk."],
+  ["Interfere","varies","Foil another PC's action. Roll the stat that fits."],
+  ["Persuade NPC","CHA","Press/entice an NPC. 10+: they comply or reveal how to convince them. 7-9: it'll be costly/tricky."],
+  ["Seek Insight","WIS","Study a situation/person. 10+: ask 3. 7-9: ask 1. Gain advantage acting on the answers."]];
+const SPECIAL_MOVES=[
+  ["Death's Door","+nothing","When dying, roll +0. 10+: back to 1 HP, marked. 7-9: stabilized but out of action. 6-: your time may have come."],
+  ["Burn Brightly","—","Spend 2 XP after a roll to add +1 (when you have enough XP to level)."]];
+
+const PIPS={1:[4],2:[0,8],3:[0,4,8],4:[0,2,6,8],5:[0,2,4,6,8],6:[0,2,3,5,6,8]};
+function dieFace(v){let h="";for(let i=0;i<9;i++)h+=`<span>${PIPS[v].includes(i)?'<i></i>':''}</span>`;return h;}
+const TIER_LABEL={"tier-hit":"FULL SUCCESS · 10+","tier-mix":"PARTIAL · 7–9","tier-miss":"MISS · 6–"};
+function tierOf(t){return t>=10?"tier-hit":t>=7?"tier-mix":"tier-miss";}
+let advOn=false,disOn=false,rollTO=null;
+const netAdv=()=>(advOn&&disOn)?0:(advOn?1:(disOn?-1:0));
+function performRoll(numDice,mod){
+  const net=netAdv(),N=numDice+(net?1:0),rolls=[];
+  for(let i=0;i<N;i++)rolls.push(1+Math.floor(Math.random()*6));
+  let di=-1;
+  if(net===1){let mn=99;rolls.forEach((r,i)=>{if(r<mn){mn=r;di=i;}});}
+  else if(net===-1){let mx=0;rolls.forEach((r,i)=>{if(r>mx){mx=r;di=i;}});}
+  const kept=rolls.filter((_,i)=>i!==di),total=kept.reduce((a,b)=>a+b,0)+mod;
+  return{rolls,kept,dropIdx:di,dropVal:di>=0?rolls[di]:null,total,keptCount:kept.length};
+}
+function showRoll(label,numDice,mod){
+  const wrap=document.getElementById("drDice");if(!wrap)return;
+  if(rollTO){clearTimeout(rollTO);rollTO=null;}
+  const ctx=document.getElementById("drCtx"),tot=document.getElementById("drTotal"),tier=document.getElementById("drTier"),bd=document.getElementById("drBd");
+  const net=netAdv(),fin=performRoll(numDice,mod),sign=mod>=0?"+"+mod:""+mod;
+  ctx.textContent=label+(mod!==0?" "+sign:"")+(net===1?" · ADVANTAGE":net===-1?" · DISADVANTAGE":"");
+  wrap.innerHTML="";const dies=fin.rolls.map(()=>{const d=el(`<div class="die roll"></div>`);wrap.appendChild(d);return d;});
+  tot.textContent="";tot.className="total";tier.textContent="";tier.className="tier";bd.textContent="";
+  const delays=[70,85,105,135,180,250,330];let i=0;
+  (function step(){
+    dies.forEach(d=>d.innerHTML=dieFace(1+Math.floor(Math.random()*6)));
+    if(i<delays.length){rollTO=setTimeout(step,delays[i++]);}
+    else{
+      dies.forEach((d,idx)=>{d.classList.remove("roll");d.innerHTML=dieFace(fin.rolls[idx]);if(idx===fin.dropIdx)d.classList.add("dropped");});
+      tot.textContent=fin.total;tot.classList.add("pop");
+      if(fin.keptCount===2){const t=tierOf(fin.total);tot.classList.add(t);tier.textContent=TIER_LABEL[t];tier.classList.add(t);}
+      bd.textContent=`( ${fin.kept.join(" + ")} )${mod!==0?" "+sign:""}`+(fin.dropVal!=null?`   ·   dropped ${fin.dropVal}`:"");
+      rollTO=null;
+    }
+  })();
+}
+function syncAdv(a,b){a.classList.toggle("on",advOn);a.querySelector(".state").textContent=advOn?"ON":"OFF";b.classList.toggle("on",disOn);b.querySelector(".state").textContent=disOn?"ON":"OFF";}
+
+function renderDice(){
+  const v=document.getElementById("view-dice");v.innerHTML="";
+  const bay=el(`<div class="rollbay"></div>`);
+  // left: quick roller
+  const left=el(`<div class="sidecol"></div>`);
+  left.appendChild(el(`<div style="font-weight:700;color:var(--accent2);font-size:14px">⚙ Quick roll</div>`));
+  left.appendChild(el(`<label>Number of d6</label>`));const qNum=el(`<input type="number" value="2" min="1" max="12">`);left.appendChild(qNum);
+  left.appendChild(el(`<label>Modifier (+ / −)</label>`));const qMod=el(`<input type="number" value="0">`);left.appendChild(qMod);
+  const qRoll=el(`<button class="btn primary" style="margin-top:6px;padding:10px">🎲 Roll</button>`);
+  qRoll.onclick=()=>{const n=Math.max(1,parseInt(qNum.value)||1),m=parseInt(qMod.value)||0;showRoll(`Quick roll ${n}d6`,n,m);};
+  left.appendChild(qRoll);
+  // center: result
+  const center=el(`<div class="bigresult" id="diceResult"><div class="ctx" id="drCtx">Tap a stat, or set dice and Roll</div><div class="dice" id="drDice"></div><div class="total" id="drTotal">—</div><div class="tier" id="drTier"></div><div class="bd" id="drBd"></div></div>`);
+  // right: advantage / disadvantage
+  const right=el(`<div class="sidecol"></div>`);
+  const advBtn=el(`<button class="advbtn" id="advBtn">Advantage<span class="state">OFF</span></button>`);
+  const disBtn=el(`<button class="advbtn" id="disBtn">Disadvantage<span class="state">OFF</span></button>`);
+  advBtn.onclick=()=>{advOn=!advOn;syncAdv(advBtn,disBtn);};
+  disBtn.onclick=()=>{disOn=!disOn;syncAdv(advBtn,disBtn);};
+  right.append(advBtn,disBtn);
+  bay.append(left,center,right);v.appendChild(bay);
+  const dd=center.querySelector("#drDice");const p1=el(`<div class="die"></div>`);p1.innerHTML=dieFace(6);const p2=el(`<div class="die"></div>`);p2.innerHTML=dieFace(5);dd.append(p1,p2);
+  syncAdv(advBtn,disBtn);
+  v.appendChild(el(`<p class="hint" style="text-align:center;margin:-6px 0 14px">Advantage rolls an extra d6 and drops the lowest · Disadvantage drops the highest · both on cancel out. Toggles apply to every roll below until you turn them off.</p>`));
+
+  const cr=el(`<div class="card"><h3>🎯 Character rolls <span class="hint" style="font-weight:400">— click a stat to roll for that hero</span></h3></div>`);
+  if(!state.characters.length){cr.appendChild(el(`<p class="muted">No heroes yet — add them in the Characters tab and they'll appear here with one-click stat rolls.</p>`));}
+  else{state.characters.forEach(c=>{
+    const row=el(`<div class="entity"></div>`);
+    row.appendChild(el(`<b>${esc(c.name)} <span class="muted" style="font-weight:400;font-size:12px">${esc(c.playbook)}</span></b>`));
+    const btns=el(`<div class="row" style="gap:6px;margin-top:8px"></div>`);
+    STATS.forEach(s=>{const mod=parseInt(c[s])||0,sign=mod>=0?"+"+mod:""+mod;
+      const b=el(`<button class="btn sm" style="flex:0 0 auto;min-width:74px">${s} <b style="color:var(--accent)">${sign}</b></button>`);
+      b.onclick=()=>showRoll(`${esc(c.name)} · ${s}`,2,mod);btns.appendChild(b);});
+    row.appendChild(btns);cr.appendChild(row);});}
+  v.appendChild(cr);
+
+  const mv=el(`<div class="card"><h3>📜 Move reference</h3><p class="hint">2d6 + stat · 10+ full success · 7–9 partial (cost/complication) · 6– miss (mark XP, GM makes a move)</p></div>`);
+  BASIC_MOVES.forEach(([n,stat,desc])=>mv.appendChild(el(`<div class="move"><b>${n}</b> <span class="pill">+${stat}</span><br><span class="hint">${desc}</span></div>`)));
+  SPECIAL_MOVES.forEach(([n,stat,desc])=>mv.appendChild(el(`<div class="move"><b>${n}</b> <span class="pill">${stat}</span><br><span class="hint">${desc}</span></div>`)));
+  v.appendChild(mv);
+}
+
+function renderAll(){const a=document.querySelector(".tab.active")?.dataset.tab;if(a==="characters")renderCharacters();else if(a==="steading")renderSteading();else if(a==="fronts")renderFronts();else if(a==="npcs")renderNPCs();else if(a==="dice")renderDice();}
+
+function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="stonetop-table-"+new Date().toISOString().slice(0,10)+".json";a.click();}
+function importData(){const inp=document.getElementById("fileInput");inp.value="";inp.onchange=()=>{const f=inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{state=migrate(JSON.parse(rd.result));save();renderAll();alert("Imported.");}catch(e){alert("Could not read that file.");}};rd.readAsText(f);};inp.click();}
+
+const SYNC_BASE="https://jsonblob.com/api/jsonBlob";let syncTimer=null,lastPulled=0;
+function setSync(status,msg){document.getElementById("syncdot").className="syncdot"+(status?" "+status:"");document.getElementById("syncmsg").textContent=msg;}
+function openSync(){
+  const room=state.meta.roomId;
+  if(room){if(confirm("You're in a Shared Table.\n\nRoom code:\n"+room+"\n\nOK = copy the code to share in Discord.\nCancel = leave the shared table (data stays local).")){navigator.clipboard?.writeText(room);}else{if(confirm("Leave the shared table?")){stopSync();state.meta.roomId=null;save();setSync("","local only");}}return;}
+  if(confirm("Shared Table lets everyone edit the same campaign live.\n\nOK = Create a new shared table (you host)\nCancel = Join one with a room code")){createRoom();}
+  else{const code=prompt("Paste the room code from your GM:");if(code&&code.trim())joinRoom(code.trim());}
+}
+async function createRoom(){setSync("","creating…");try{const res=await fetch(SYNC_BASE,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(state)});if(!res.ok)throw new Error(res.status);const loc=res.headers.get("Location")||res.headers.get("location");const id=loc?loc.split("/").pop():null;if(!id)throw new Error("no id");state.meta.roomId=id;save(false);startSync();prompt("Shared Table created! Copy this room code and send it to your players in Discord:",id);}catch(e){setSync("err","sync unavailable");alert("Couldn't create a shared table (network/service issue). Export/Import still works. Error: "+e.message);}}
+async function joinRoom(id){setSync("","joining…");try{const res=await fetch(SYNC_BASE+"/"+id,{headers:{"Accept":"application/json"}});if(!res.ok)throw new Error(res.status);const remote=await res.json();state=migrate(remote);state.meta.roomId=id;save(false);lastPulled=Date.now();startSync();renderAll();alert("Joined the Shared Table! Your app now stays in sync.");}catch(e){setSync("err","join failed");alert("Couldn't join that room. Check the code. Error: "+e.message);}}
+function startSync(){stopSync();if(!state.meta.roomId)return;setSync("live","syncing…");syncTimer=setInterval(syncTick,4000);syncTick();}
+function stopSync(){if(syncTimer){clearInterval(syncTimer);syncTimer=null;}}
+async function syncTick(){const id=state.meta.roomId;if(!id)return;try{
+  if(dirty){const res=await fetch(SYNC_BASE+"/"+id,{method:"PUT",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(state)});if(!res.ok)throw new Error("push "+res.status);dirty=false;lastPulled=state.meta.updated;setSync("live","synced just now");return;}
+  const res=await fetch(SYNC_BASE+"/"+id,{headers:{"Accept":"application/json"}});if(!res.ok)throw new Error("pull "+res.status);const remote=await res.json();
+  if(remote.meta&&remote.meta.updated>lastPulled&&remote.meta.updated>state.meta.updated){const rid=state.meta.roomId;state=migrate(remote);state.meta.roomId=rid;localStorage.setItem("stonetop",JSON.stringify(state));lastPulled=remote.meta.updated;renderAll();setSync("live","updated from table");}
+  else{setSync("live","synced");}
+}catch(e){setSync("err","sync hiccup — retrying");}}
+
+buildTabs();
+if(state.meta.roomId)startSync();else setSync("","local only");
+</script>
+</body>
+</html>
