@@ -79,8 +79,7 @@ input:focus,textarea:focus,select:focus{outline:1px solid var(--accent);border-c
   <div style="flex:1"></div>
   <div class="toolbar">
     <span class="syncdot" id="syncdot" title="sync status"></span>
-    <span class="muted" id="syncmsg" style="font-size:12px">local only</span>
-    <button class="btn sm" onclick="openSync()">Shared Table…</button>
+    <span class="muted" id="syncmsg" style="font-size:12px">connecting…</span>
     <button class="btn sm" onclick="exportData()">Export</button>
     <button class="btn sm" onclick="importData()">Import</button>
     <input type="file" id="fileInput" accept="application/json" style="display:none">
@@ -303,27 +302,49 @@ function renderAll(){const a=document.querySelector(".tab.active")?.dataset.tab;
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="stonetop-table-"+new Date().toISOString().slice(0,10)+".json";a.click();}
 function importData(){const inp=document.getElementById("fileInput");inp.value="";inp.onchange=()=>{const f=inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{state=migrate(JSON.parse(rd.result));save();renderAll();alert("Imported.");}catch(e){alert("Could not read that file.");}};rd.readAsText(f);};inp.click();}
 
-const SYNC_BASE="/api/jsonBlob";let syncTimer=null,lastPulled=0;
+const SYNC_BASE="/api/jsonBlob";
+const DEFAULT_ROOM_ID="stonetop-main";
+let syncTimer=null,lastPulled=0;
 function setSync(status,msg){document.getElementById("syncdot").className="syncdot"+(status?" "+status:"");document.getElementById("syncmsg").textContent=msg;}
-function openSync(){
-  const room=state.meta.roomId;
-  if(room){if(confirm("You're in a Shared Table.\n\nRoom code:\n"+room+"\n\nOK = copy the code to share in Discord.\nCancel = leave the shared table (data stays local).")){navigator.clipboard?.writeText(room);}else{if(confirm("Leave the shared table?")){stopSync();state.meta.roomId=null;save();setSync("","local only");}}return;}
-  if(confirm("Shared Table lets everyone edit the same campaign live.\n\nOK = Create a new shared table (you host)\nCancel = Join one with a room code")){createRoom();}
-  else{const code=prompt("Paste the room code from your GM:");if(code&&code.trim())joinRoom(code.trim());}
-}
-async function createRoom(){setSync("","creating…");try{const res=await fetch(SYNC_BASE,{method:"POST",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(state)});if(!res.ok)throw new Error(res.status);const loc=res.headers.get("Location")||res.headers.get("location");const id=loc?loc.split("/").pop():null;if(!id)throw new Error("no id");state.meta.roomId=id;save(false);startSync();prompt("Shared Table created! Copy this room code and send it to your players in Discord:",id);}catch(e){setSync("err","sync unavailable");alert("Couldn't create a shared table (network/service issue). Export/Import still works. Error: "+e.message);}}
-async function joinRoom(id){setSync("","joining…");try{const res=await fetch(SYNC_BASE+"/"+id,{headers:{"Accept":"application/json"}});if(!res.ok)throw new Error(res.status);const remote=await res.json();state=migrate(remote);state.meta.roomId=id;save(false);lastPulled=Date.now();startSync();renderAll();alert("Joined the Shared Table! Your app now stays in sync.");}catch(e){setSync("err","join failed");alert("Couldn't join that room. Check the code. Error: "+e.message);}}
-function startSync(){stopSync();if(!state.meta.roomId)return;setSync("live","syncing…");syncTimer=setInterval(syncTick,4000);syncTick();}
+function startSync(){stopSync();setSync("live","syncing…");syncTimer=setInterval(syncTick,4000);syncTick();}
 function stopSync(){if(syncTimer){clearInterval(syncTimer);syncTimer=null;}}
-async function syncTick(){const id=state.meta.roomId;if(!id)return;try{
+async function startDefaultSharedTable(){
+  stopSync();
+  state.meta.roomId=DEFAULT_ROOM_ID;
+  localStorage.setItem("stonetop",JSON.stringify(state));
+  setSync("live","connecting…");
+  try{
+    const res=await fetch(SYNC_BASE+"/"+DEFAULT_ROOM_ID,{headers:{"Accept":"application/json"}});
+    if(res.ok){
+      const remote=await res.json();
+      state=migrate(remote);
+      state.meta.roomId=DEFAULT_ROOM_ID;
+      localStorage.setItem("stonetop",JSON.stringify(state));
+      lastPulled=state.meta.updated||Date.now();
+      renderAll();
+      setSync("live","shared table connected");
+    }else if(res.status===404){
+      state.meta.updated=Date.now();
+      await fetch(SYNC_BASE+"/"+DEFAULT_ROOM_ID,{method:"PUT",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(state)});
+      lastPulled=state.meta.updated;
+      setSync("live","shared table created");
+    }else{
+      throw new Error("pull "+res.status);
+    }
+    syncTimer=setInterval(syncTick,4000);
+  }catch(e){
+    setSync("err","sync unavailable — local changes only");
+  }
+}
+async function syncTick(){const id=state.meta.roomId||DEFAULT_ROOM_ID;if(!id)return;try{
   if(dirty){const res=await fetch(SYNC_BASE+"/"+id,{method:"PUT",headers:{"Content-Type":"application/json","Accept":"application/json"},body:JSON.stringify(state)});if(!res.ok)throw new Error("push "+res.status);dirty=false;lastPulled=state.meta.updated;setSync("live","synced just now");return;}
   const res=await fetch(SYNC_BASE+"/"+id,{headers:{"Accept":"application/json"}});if(!res.ok)throw new Error("pull "+res.status);const remote=await res.json();
-  if(remote.meta&&remote.meta.updated>lastPulled&&remote.meta.updated>state.meta.updated){const rid=state.meta.roomId;state=migrate(remote);state.meta.roomId=rid;localStorage.setItem("stonetop",JSON.stringify(state));lastPulled=remote.meta.updated;renderAll();setSync("live","updated from table");}
+  if(remote.meta&&remote.meta.updated>lastPulled&&remote.meta.updated>state.meta.updated){state=migrate(remote);state.meta.roomId=id;localStorage.setItem("stonetop",JSON.stringify(state));lastPulled=remote.meta.updated;renderAll();setSync("live","updated from table");}
   else{setSync("live","synced");}
 }catch(e){setSync("err","sync hiccup — retrying");}}
 
 buildTabs();
-if(state.meta.roomId)startSync();else setSync("","local only");
+startDefaultSharedTable();
 </script>
 </body>
 </html>
