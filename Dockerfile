@@ -1,3 +1,9 @@
-FROM nginx:alpine
-COPY index.html /usr/share/nginx/html/index.html
-EXPOSE 80
+FROM node:20-alpine
+WORKDIR /app
+COPY package.json package-lock.json* ./
+RUN npm install --omit=dev
+COPY . .
+ENV PORT=3000
+ENV DATA_DIR=/data
+EXPOSE 3000
+CMD ["npm", "start"]

@@ -303,7 +303,7 @@ function renderAll(){const a=document.querySelector(".tab.active")?.dataset.tab;
 function exportData(){const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="stonetop-table-"+new Date().toISOString().slice(0,10)+".json";a.click();}
 function importData(){const inp=document.getElementById("fileInput");inp.value="";inp.onchange=()=>{const f=inp.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{state=migrate(JSON.parse(rd.result));save();renderAll();alert("Imported.");}catch(e){alert("Could not read that file.");}};rd.readAsText(f);};inp.click();}
 
-const SYNC_BASE="https://jsonblob.com/api/jsonBlob";let syncTimer=null,lastPulled=0;
+const SYNC_BASE="/api/jsonBlob";let syncTimer=null,lastPulled=0;
 function setSync(status,msg){document.getElementById("syncdot").className="syncdot"+(status?" "+status:"");document.getElementById("syncmsg").textContent=msg;}
 function openSync(){
   const room=state.meta.roomId;
