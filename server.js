@@ -69,7 +69,7 @@ function rotateBackups(id, type, keep) {
   });
 }
 function backupFileFor(id, name) {
-  if (!safeId(id) || !/^[0-9T\-]+-(auto|manual)\.json$/.test(name)) return null;
+  if (!safeId(id) || !/^[0-9T\-Z]+-(auto|manual)\.json$/.test(name)) return null;
   return path.join(backupFolderFor(id), name);
 }
 
